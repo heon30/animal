@@ -1,0 +1,1837 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>평행이동 상자 타임어택</title>
+  <style>
+    :root {
+      --bg1: #111827;
+      --bg2: #1e3a8a;
+      --text: #f9fafb;
+      --muted: #cbd5e1;
+      --bad: #ef4444;
+      --point: #facc15;
+      --blue: #38bdf8;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Pretendard", "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background:
+        radial-gradient(circle at 20% 10%, rgba(56, 189, 248, 0.35), transparent 28%),
+        radial-gradient(circle at 80% 0%, rgba(192, 132, 252, 0.32), transparent 30%),
+        linear-gradient(135deg, var(--bg1), var(--bg2));
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+      overflow-x: hidden;
+    }
+
+    .app {
+      width: min(1160px, 100%);
+    }
+
+    .screen {
+      display: none;
+      background: rgba(15, 23, 42, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 28px;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(18px);
+      padding: 32px;
+      overflow: hidden;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    .hero {
+      text-align: center;
+      padding: 24px 10px 8px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.16);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: #e0f2fe;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 14px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(38px, 7vw, 76px);
+      letter-spacing: -0.08em;
+      line-height: 0.95;
+      text-shadow: 0 8px 20px rgba(0, 0, 0, 0.28);
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: clamp(16px, 2.5vw, 22px);
+      margin: 20px auto 0;
+      max-width: 840px;
+      line-height: 1.55;
+      word-break: keep-all;
+    }
+
+    .start-box {
+      margin: 30px auto 0;
+      max-width: 520px;
+      display: grid;
+      gap: 14px;
+    }
+
+    input, button {
+      font: inherit;
+    }
+
+    .nickname {
+      width: 100%;
+      border: 0;
+      outline: 0;
+      padding: 18px 20px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.95);
+      color: #111827;
+      font-size: 22px;
+      font-weight: 800;
+      text-align: center;
+      box-shadow: inset 0 0 0 2px rgba(255,255,255,0.4);
+    }
+
+    .main-btn {
+      border: 0;
+      cursor: pointer;
+      padding: 18px 22px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, #facc15, #fb923c);
+      color: #1f2937;
+      font-size: 22px;
+      font-weight: 1000;
+      box-shadow: 0 12px 28px rgba(250, 204, 21, 0.28);
+      transition: transform 0.12s, filter 0.12s;
+    }
+
+    .main-btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.05);
+    }
+
+    .secondary-btn {
+      border: 1px solid rgba(255,255,255,0.24);
+      cursor: pointer;
+      padding: 14px 18px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text);
+      font-size: 17px;
+      font-weight: 900;
+    }
+
+    .rule-card {
+      margin-top: 28px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      text-align: left;
+    }
+
+    .rule {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 18px;
+      padding: 18px;
+      line-height: 1.55;
+      color: #e5e7eb;
+      word-break: keep-all;
+    }
+
+    .rule b {
+      color: #fef08a;
+    }
+
+    .mega-score-card {
+      margin-bottom: 18px;
+      padding: 22px 24px;
+      border-radius: 28px;
+      text-align: center;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(250, 204, 21, 0.26), transparent 34%),
+        linear-gradient(135deg, rgba(250, 204, 21, 0.18), rgba(56, 189, 248, 0.13));
+      border: 1px solid rgba(250, 204, 21, 0.32);
+      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.24);
+    }
+
+    .mega-score-label {
+      color: #fde68a;
+      font-size: 18px;
+      font-weight: 1000;
+      letter-spacing: -0.04em;
+      margin-bottom: 4px;
+    }
+
+    .mega-score-value {
+      color: #facc15;
+      font-size: clamp(64px, 11vw, 132px);
+      font-weight: 1000;
+      line-height: 0.95;
+      letter-spacing: -0.09em;
+      text-shadow: 0 10px 32px rgba(0, 0, 0, 0.36);
+    }
+
+    .mega-score-value.bump {
+      animation: scoreBump 0.36s ease-out;
+    }
+
+    @keyframes scoreBump {
+      0% { transform: scale(1); }
+      45% { transform: scale(1.08); }
+      100% { transform: scale(1); }
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .stat {
+      background: rgba(255, 255, 255, 0.11);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 18px;
+      padding: 14px 12px;
+      text-align: center;
+      min-height: 76px;
+    }
+
+    .stat .label {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .stat .value {
+      font-size: 28px;
+      font-weight: 1000;
+      letter-spacing: -0.04em;
+    }
+
+    .stat.timer.low .value {
+      color: var(--bad);
+      animation: pulse 0.7s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.08); }
+    }
+
+    .game-area {
+      display: grid;
+      grid-template-columns: 1.03fr 0.97fr;
+      gap: 20px;
+      align-items: stretch;
+    }
+
+    .problem-card {
+      position: relative;
+      min-height: 540px;
+      background:
+        linear-gradient(rgba(15, 23, 42, 0.5), rgba(15, 23, 42, 0.7)),
+        radial-gradient(circle at 80% 20%, rgba(56, 189, 248, 0.22), transparent 32%);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 28px;
+      padding: 26px;
+      overflow: hidden;
+    }
+
+    .problem-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .level-pill {
+      background: rgba(250, 204, 21, 0.15);
+      color: #fef08a;
+      border: 1px solid rgba(250, 204, 21, 0.35);
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-weight: 900;
+      font-size: 14px;
+    }
+
+    .question-no {
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    .formula-box {
+      margin-top: 18px;
+      background: rgba(255, 255, 255, 0.95);
+      color: #111827;
+      border-radius: 28px;
+      padding: 34px 20px;
+      text-align: center;
+      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.23);
+    }
+
+    .formula-label {
+      font-size: 15px;
+      font-weight: 900;
+      color: #64748b;
+      margin-bottom: 8px;
+    }
+
+    .formula {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(38px, 6vw, 68px);
+      font-weight: 900;
+      letter-spacing: -0.04em;
+    }
+
+    .sentence {
+      margin-top: 24px;
+      font-size: clamp(18px, 2.6vw, 29px);
+      line-height: 1.65;
+      letter-spacing: -0.04em;
+      font-weight: 800;
+      word-break: keep-all;
+    }
+
+    .blank {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      min-width: 92px;
+      padding: 2px 12px;
+      border-bottom: 4px solid #facc15;
+      color: #fef08a;
+      margin: 0 3px;
+    }
+
+    .amount-blank {
+      min-width: 110px;
+      color: #86efac;
+    }
+
+    .feedback {
+      margin-top: 18px;
+      min-height: 70px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      align-items: center;
+      justify-content: center;
+      font-size: 25px;
+      font-weight: 1000;
+      text-align: center;
+      word-break: keep-all;
+    }
+
+    .feedback small {
+      display: block;
+      color: #cbd5e1;
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .feedback.good {
+      color: #86efac;
+    }
+
+    .feedback.bad {
+      color: #fca5a5;
+    }
+
+    .feedback.luck {
+      color: #fef08a;
+    }
+
+    .luck-log {
+      margin-top: 14px;
+      min-height: 74px;
+      background: rgba(255,255,255,0.09);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 18px;
+      padding: 14px;
+      color: #e5e7eb;
+      line-height: 1.45;
+      word-break: keep-all;
+    }
+
+    .luck-log b {
+      color: #fef08a;
+    }
+
+    .answer-card {
+      background: rgba(255, 255, 255, 0.11);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 28px;
+      padding: 24px;
+    }
+
+    .answer-title {
+      font-size: 24px;
+      font-weight: 1000;
+      letter-spacing: -0.05em;
+      margin-bottom: 16px;
+    }
+
+    .choice-group {
+      margin-bottom: 20px;
+    }
+
+    .choice-label {
+      display: block;
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 900;
+      margin-bottom: 10px;
+    }
+
+    .choice-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .choice {
+      position: relative;
+      border: 1px solid rgba(255, 255, 255, 0.20);
+      border-radius: 18px;
+      padding: 18px 10px;
+      background: rgba(255, 255, 255, 0.09);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 20px;
+      font-weight: 1000;
+      transition: transform 0.1s, background 0.1s, border 0.1s;
+    }
+
+    .choice:hover {
+      transform: translateY(-2px);
+      background: rgba(255, 255, 255, 0.16);
+    }
+
+    .choice.selected {
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.85), rgba(59, 130, 246, 0.85));
+      border-color: rgba(186, 230, 253, 0.95);
+      box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.13);
+    }
+
+    .choice:disabled,
+    .key:disabled,
+    .submit-btn:disabled,
+    .luck-box:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+      transform: none !important;
+      filter: grayscale(0.3);
+    }
+
+    .amount-display {
+      width: 100%;
+      min-height: 70px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.95);
+      color: #111827;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 38px;
+      font-weight: 1000;
+      letter-spacing: -0.04em;
+      margin-bottom: 12px;
+      box-shadow: inset 0 0 0 2px rgba(255,255,255,0.5);
+    }
+
+    .keypad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .key {
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 18px;
+      padding: 16px 8px;
+      min-height: 58px;
+      cursor: pointer;
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+      font-size: 25px;
+      font-weight: 1000;
+      transition: transform 0.1s, background 0.1s;
+      user-select: none;
+    }
+
+    .key:hover {
+      transform: translateY(-2px);
+      background: rgba(255,255,255,0.2);
+    }
+
+    .key.sign {
+      background: rgba(250, 204, 21, 0.22);
+      color: #fef08a;
+      border-color: rgba(250, 204, 21, 0.4);
+      font-size: 30px;
+    }
+
+    .key.utility {
+      background: rgba(239, 68, 68, 0.18);
+      color: #fecaca;
+      border-color: rgba(239, 68, 68, 0.28);
+      font-size: 17px;
+    }
+
+    .submit-btn {
+      width: 100%;
+      margin-top: 0;
+      border: 0;
+      border-radius: 20px;
+      padding: 20px;
+      font-size: 24px;
+      font-weight: 1000;
+      cursor: pointer;
+      color: #111827;
+      background: linear-gradient(135deg, #34d399, #38bdf8);
+      box-shadow: 0 14px 32px rgba(56, 189, 248, 0.24);
+      transition: transform 0.12s, filter 0.12s;
+    }
+
+    .submit-btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.05);
+    }
+
+    .luck-panel {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(2, 6, 23, 0.72);
+      backdrop-filter: blur(8px);
+    }
+
+    .luck-panel.active {
+      display: flex;
+      animation: modalFadeIn 0.16s ease-out;
+    }
+
+    @keyframes modalFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .luck-modal {
+      width: min(680px, 100%);
+      padding: 26px;
+      border-radius: 30px;
+      background:
+        radial-gradient(circle at 20% 15%, rgba(250, 204, 21, 0.28), transparent 34%),
+        radial-gradient(circle at 80% 10%, rgba(56, 189, 248, 0.22), transparent 32%),
+        rgba(15, 23, 42, 0.94);
+      border: 1px solid rgba(250, 204, 21, 0.32);
+      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.55);
+      text-align: center;
+      transform: translateY(8px) scale(0.98);
+      animation: modalPop 0.18s ease-out forwards;
+    }
+
+    @keyframes modalPop {
+      to {
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .luck-title {
+      color: #fef08a;
+      font-size: clamp(28px, 4vw, 42px);
+      font-weight: 1000;
+      letter-spacing: -0.06em;
+      margin-bottom: 8px;
+      text-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    }
+
+    .luck-desc {
+      color: #e5e7eb;
+      font-size: 16px;
+      line-height: 1.55;
+      margin-bottom: 18px;
+      word-break: keep-all;
+    }
+
+    .luck-box-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .luck-box {
+      min-height: 112px;
+      border: 1px solid rgba(250, 204, 21, 0.35);
+      border-radius: 22px;
+      background:
+        radial-gradient(circle at 50% 20%, rgba(250, 204, 21, 0.28), transparent 34%),
+        linear-gradient(135deg, rgba(255,255,255,0.16), rgba(255,255,255,0.06));
+      color: #fff7ed;
+      cursor: pointer;
+      font-weight: 1000;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 4px;
+      transition: transform 0.14s, filter 0.14s, background 0.14s;
+      box-shadow: 0 14px 26px rgba(0,0,0,0.18);
+      user-select: none;
+    }
+
+    .luck-box:hover {
+      transform: translateY(-4px) scale(1.02);
+      filter: brightness(1.08);
+    }
+
+    .luck-box .box-icon {
+      font-size: 34px;
+      line-height: 1;
+    }
+
+    .luck-box .box-label {
+      font-size: 17px;
+      letter-spacing: -0.04em;
+    }
+
+    .luck-box .box-result {
+      display: none;
+      font-size: 22px;
+      color: #fef08a;
+      letter-spacing: -0.04em;
+    }
+
+    .luck-box.selected {
+      background: linear-gradient(135deg, rgba(250, 204, 21, 0.36), rgba(251, 113, 133, 0.28), rgba(167, 139, 250, 0.25));
+      outline: 3px solid rgba(250, 204, 21, 0.55);
+      transform: translateY(-4px) scale(1.04);
+    }
+
+    .luck-box.revealed .box-icon,
+    .luck-box.revealed .box-label {
+      display: none;
+    }
+
+    .luck-box.revealed .box-result {
+      display: block;
+    }
+
+    .luck-box.not-selected {
+      opacity: 0.38;
+      filter: grayscale(0.35);
+    }
+
+    .hint {
+      margin-top: 18px;
+      color: #dbeafe;
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(147, 197, 253, 0.25);
+      border-radius: 16px;
+      padding: 14px;
+      line-height: 1.5;
+      font-size: 15px;
+      word-break: keep-all;
+    }
+
+    .result-layout {
+      display: grid;
+      grid-template-columns: 0.9fr 1.1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .final-score {
+      text-align: center;
+      background: rgba(255, 255, 255, 0.11);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 28px;
+      padding: 28px 20px;
+    }
+
+    .final-score h2 {
+      font-size: 36px;
+      margin: 0 0 12px;
+      letter-spacing: -0.07em;
+    }
+
+    .score-big {
+      font-size: clamp(54px, 9vw, 96px);
+      font-weight: 1000;
+      color: #facc15;
+      letter-spacing: -0.08em;
+      line-height: 1;
+      margin-bottom: 18px;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 20px 0;
+    }
+
+    .summary-item {
+      background: rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 14px;
+    }
+
+    .summary-item span {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .summary-item b {
+      display: block;
+      font-size: 25px;
+      margin-top: 2px;
+    }
+
+    .rank-card {
+      background: rgba(255, 255, 255, 0.11);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 28px;
+      padding: 24px;
+    }
+
+    .rank-title {
+      font-size: 28px;
+      font-weight: 1000;
+      letter-spacing: -0.06em;
+      margin-bottom: 14px;
+    }
+
+    .rank-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .rank-row {
+      display: grid;
+      grid-template-columns: 48px 1fr 100px;
+      gap: 8px;
+      align-items: center;
+      background: rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-weight: 900;
+    }
+
+    .rank-row.me {
+      background: rgba(250, 204, 21, 0.20);
+      outline: 2px solid rgba(250, 204, 21, 0.45);
+    }
+
+    .rank-row .rank-score {
+      text-align: right;
+      color: #fef08a;
+    }
+
+    .no-rank {
+      color: var(--muted);
+      line-height: 1.5;
+      padding: 16px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 14px;
+    }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%) translateY(20px);
+      opacity: 0;
+      pointer-events: none;
+      background: rgba(15, 23, 42, 0.92);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: white;
+      border-radius: 999px;
+      padding: 13px 20px;
+      font-weight: 900;
+      box-shadow: 0 18px 40px rgba(0,0,0,0.3);
+      transition: 0.2s;
+      z-index: 20;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .floating-score {
+      position: absolute;
+      right: 28px;
+      top: 145px;
+      font-size: 34px;
+      font-weight: 1000;
+      color: #fef08a;
+      opacity: 0;
+      transform: translateY(0);
+      pointer-events: none;
+      text-shadow: 0 4px 18px rgba(0,0,0,0.35);
+    }
+
+    .floating-score.show {
+      animation: floatUp 0.75s ease-out;
+    }
+
+    @keyframes floatUp {
+      0% { opacity: 0; transform: translateY(10px) scale(0.8); }
+      20% { opacity: 1; transform: translateY(0) scale(1.08); }
+      100% { opacity: 0; transform: translateY(-42px) scale(1); }
+    }
+
+    @media (max-width: 980px) {
+      body {
+        padding: 14px;
+        align-items: flex-start;
+      }
+
+      .screen {
+        padding: 20px;
+        border-radius: 22px;
+      }
+
+      .rule-card,
+      .game-area,
+      .result-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .problem-card {
+        min-height: auto;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .topbar {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .choice-grid,
+      .button-row {
+        grid-template-columns: 1fr;
+      }
+
+      .sentence {
+        font-size: 18px;
+      }
+
+      .formula {
+        font-size: 40px;
+      }
+
+      .keypad {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .luck-box-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .luck-modal {
+        padding: 20px;
+        border-radius: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section id="startScreen" class="screen active">
+      <div class="hero">
+        <div class="badge">🎁 이차함수 평행이동 + 상자 선택 게임</div>
+        <h1>평행이동<br />상자 타임어택</h1>
+        <p class="subtitle">
+          1분 안에 식을 보고 계수가 같은 기본 그래프가 어떻게 평행이동했는지 맞히세요. 정답 점수는 속도에 따라 <b>200점~50점</b>,
+          정답이면 <b>3개 상자 중 하나</b>를 고르고, 오답이면 <b>점수가 0점</b>이 됩니다.
+        </p>
+
+        <div class="start-box">
+          <input id="nicknameInput" class="nickname" maxlength="10" placeholder="닉네임 입력" />
+          <button id="startBtn" class="main-btn">게임 시작</button>
+          <button id="rankBtn" class="secondary-btn">온라인 랭킹 보기</button>
+        </div>
+
+        <div class="rule-card">
+          <div class="rule">
+            <b>y = ax² + q</b><br />
+            <b>y = ax²</b> 그래프를 y축방향으로 q만큼 이동합니다.<br />
+            예: y = 2x² - 5 → <b>y = 2x²</b>를 y축 -5
+          </div>
+          <div class="rule">
+            <b>y = a(x - p)²</b><br />
+            <b>y = ax²</b> 그래프를 x축방향으로 p만큼 이동합니다.<br />
+            예: y = 2(x + 3)² → <b>y = 2x²</b>를 x축 -3
+          </div>
+          <div class="rule">
+            <b>오답 규칙</b><br />
+            문제를 틀리면 <b>상자를 고를 수 없습니다.</b><br />
+            그리고 현재 점수는 <b>0점</b>이 됩니다.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="gameScreen" class="screen">
+      <div class="mega-score-card">
+        <div class="mega-score-label">지금 내 점수</div>
+        <div id="megaScoreText" class="mega-score-value">0</div>
+      </div>
+
+      <div class="topbar">
+        <div class="stat timer" id="timerBox">
+          <div class="label">남은 시간</div>
+          <div id="timeText" class="value">60</div>
+        </div>
+        <div class="stat">
+          <div class="label">정답 수</div>
+          <div id="correctText" class="value">0</div>
+        </div>
+        <div class="stat">
+          <div class="label">오답 수</div>
+          <div id="wrongText" class="value">0</div>
+        </div>
+        <div class="stat">
+          <div class="label">문제 수</div>
+          <div id="totalText" class="value">0</div>
+        </div>
+        <div class="stat">
+          <div class="label">문제 속도</div>
+          <div id="speedText" class="value">0.0s</div>
+        </div>
+      </div>
+
+      <div class="game-area">
+        <div class="problem-card">
+          <div class="problem-head">
+            <div id="levelText" class="level-pill">MIX MODE</div>
+            <div id="questionText" class="question-no">1번 문제</div>
+          </div>
+
+          <div class="formula-box">
+            <div class="formula-label">주어진 이차함수</div>
+            <div id="formulaText" class="formula">y = x² + 3</div>
+          </div>
+
+          <div class="sentence">
+            이 그래프는 <span id="baseFormulaText" style="color:#bfdbfe;">y=x²</span> 그래프를<br />
+            <span id="axisBlank" class="blank">?</span>으로
+            <span id="amountBlank" class="blank amount-blank">?</span>만큼 평행이동한 것이다.
+          </div>
+
+          <div id="feedback" class="feedback"></div>
+          <div id="luckLog" class="luck-log">
+            문제를 푼 뒤 운명 상자 3개 중 하나를 골라 점수를 불려 보세요.
+          </div>
+          <div id="floatingScore" class="floating-score">+100</div>
+        </div>
+
+        <div class="answer-card">
+          <div class="answer-title">정답 완성하기</div>
+
+          <div class="choice-group">
+            <span class="choice-label">1. 축 방향</span>
+            <div class="choice-grid">
+              <button class="choice" data-group="axis" data-value="x">x축방향</button>
+              <button class="choice" data-group="axis" data-value="y">y축방향</button>
+            </div>
+          </div>
+
+          <div class="choice-group">
+            <span class="choice-label">2. 이동 거리</span>
+            <div id="amountDisplay" class="amount-display">?</div>
+
+            <div class="keypad">
+              <button class="key sign" data-key="+">+</button>
+              <button class="key sign" data-key="-">-</button>
+              <button class="key utility" data-key="back">⌫</button>
+
+              <button class="key" data-key="1">1</button>
+              <button class="key" data-key="2">2</button>
+              <button class="key" data-key="3">3</button>
+
+              <button class="key" data-key="4">4</button>
+              <button class="key" data-key="5">5</button>
+              <button class="key" data-key="6">6</button>
+
+              <button class="key" data-key="7">7</button>
+              <button class="key" data-key="8">8</button>
+              <button class="key" data-key="9">9</button>
+            </div>
+          </div>
+
+          <button id="submitBtn" class="submit-btn">제출하기</button>
+
+          <div id="luckPanel" class="luck-panel" aria-modal="true" role="dialog">
+            <div class="luck-modal">
+              <div class="luck-title">🎁 운명 상자 선택</div>
+              <div class="luck-desc">
+                3개의 상자 중 하나를 고르면 점수가 바뀝니다.<br />
+                시간이 계속 흐르니 빠르게 선택하세요.
+              </div>
+              <div id="boxGrid" class="luck-box-grid">
+                <button class="luck-box" data-box-index="0">
+                  <span class="box-icon">🎁</span>
+                  <span class="box-label">1번 상자</span>
+                  <span class="box-result">?</span>
+                </button>
+                <button class="luck-box" data-box-index="1">
+                  <span class="box-icon">🎁</span>
+                  <span class="box-label">2번 상자</span>
+                  <span class="box-result">?</span>
+                </button>
+                <button class="luck-box" data-box-index="2">
+                  <span class="box-icon">🎁</span>
+                  <span class="box-label">3번 상자</span>
+                  <span class="box-result">?</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="hint">
+            <b>힌트</b><br />
+            기준 그래프는 계수가 같은 <b>y = ax²</b>입니다.<br />
+            y = ax² + q는 <b>y = ax²</b>를 y축방향으로 q만큼 이동합니다.<br />
+            y = a(x - p)²는 <b>y = ax²</b>를 x축방향으로 p만큼 이동합니다.<br />
+            양수 이동은 +를 생략해도 됩니다.<br />
+            x - 4 → <b>+4 또는 4</b>, x + 4 → <b>-4</b>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="resultScreen" class="screen">
+      <div class="result-layout">
+        <div class="final-score">
+          <h2>게임 결과</h2>
+          <div id="finalScoreText" class="score-big">0</div>
+
+          <div class="summary-grid">
+            <div class="summary-item">
+              <span>닉네임</span>
+              <b id="finalNameText">-</b>
+            </div>
+            <div class="summary-item">
+              <span>정답 수</span>
+              <b id="finalCorrectText">0</b>
+            </div>
+            <div class="summary-item">
+              <span>오답 수</span>
+              <b id="finalWrongText">0</b>
+            </div>
+            <div class="summary-item">
+              <span>최고 운</span>
+              <b id="finalBestLuckText">-</b>
+            </div>
+            <div class="summary-item">
+              <span>문제 수</span>
+              <b id="finalTotalText">0</b>
+            </div>
+            <div class="summary-item">
+              <span>정답률</span>
+              <b id="finalAccuracyText">0%</b>
+            </div>
+          </div>
+
+          <div class="button-row">
+            <button id="restartBtn" class="main-btn">다시 하기</button>
+            <button id="homeBtn" class="secondary-btn">처음으로</button>
+          </div>
+        </div>
+
+        <div class="rank-card">
+          <div class="rank-title">🏆 온라인 TOP 10 랭킹</div>
+          <div id="rankList" class="rank-list"></div>
+          <button id="refreshRankBtn" class="secondary-btn" style="width:100%; margin-top:16px;">랭킹 새로고침</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="toast" class="toast">메시지</div>
+
+  <script type="module">
+
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+    import { getAnalytics, isSupported as isAnalyticsSupported } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-analytics.js";
+    import {
+      getFirestore,
+      collection,
+      doc,
+      setDoc,
+      getDocs,
+      query,
+      orderBy,
+      limit,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBJH4uX1bj0PaEUtMDuYSyJ2GDt6f7Gz6o",
+      authDomain: "game-bb5b0.firebaseapp.com",
+      projectId: "game-bb5b0",
+      storageBucket: "game-bb5b0.firebasestorage.app",
+      messagingSenderId: "47848761419",
+      appId: "1:47848761419:web:62f872cc443d49411a85ce",
+      measurementId: "G-SJBS9DDEPL"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    let analytics = null;
+
+    isAnalyticsSupported()
+      .then((supported) => {
+        if (supported) analytics = getAnalytics(app);
+      })
+      .catch(() => {
+        analytics = null;
+      });
+
+    const RANK_COLLECTION = "parallelShiftBoxRankings";
+
+    const GAME_TIME = 60;
+    const RANK_KEY = "parallelShiftBoxTimeAttackFirebaseFallback_v1";
+
+    const state = {
+      nickname: "",
+      score: 0,
+      correct: 0,
+      wrong: 0,
+      questionCount: 0,
+      timeLeft: GAME_TIME,
+      timerId: null,
+      speedTimerId: null,
+      current: null,
+      selectedAxis: null,
+      amountText: "",
+      locked: false,
+      waitingBox: false,
+      questionStart: 0,
+      bestLuck: "-",
+      boxChoices: [],
+      gameEnded: false,
+      rankSavePromise: null,
+      runId: null
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    const startScreen = $("startScreen");
+    const gameScreen = $("gameScreen");
+    const resultScreen = $("resultScreen");
+
+    const nicknameInput = $("nicknameInput");
+    const startBtn = $("startBtn");
+    const rankBtn = $("rankBtn");
+    const submitBtn = $("submitBtn");
+    const luckPanel = $("luckPanel");
+
+    const megaScoreText = $("megaScoreText");
+    const timeText = $("timeText");
+    const correctText = $("correctText");
+    const wrongText = $("wrongText");
+    const totalText = $("totalText");
+    const speedText = $("speedText");
+    const timerBox = $("timerBox");
+    const levelText = $("levelText");
+    const questionText = $("questionText");
+    const formulaText = $("formulaText");
+    const baseFormulaText = $("baseFormulaText");
+
+    const axisBlank = $("axisBlank");
+    const amountBlank = $("amountBlank");
+    const amountDisplay = $("amountDisplay");
+    const feedback = $("feedback");
+    const luckLog = $("luckLog");
+    const floatingScore = $("floatingScore");
+
+    const finalScoreText = $("finalScoreText");
+    const finalNameText = $("finalNameText");
+    const finalCorrectText = $("finalCorrectText");
+    const finalWrongText = $("finalWrongText");
+    const finalBestLuckText = $("finalBestLuckText");
+    const finalTotalText = $("finalTotalText");
+    const finalAccuracyText = $("finalAccuracyText");
+    const rankList = $("rankList");
+
+    const restartBtn = $("restartBtn");
+    const homeBtn = $("homeBtn");
+    const refreshRankBtn = $("refreshRankBtn");
+
+    function showScreen(screen) {
+      [startScreen, gameScreen, resultScreen].forEach(s => s.classList.remove("active"));
+      screen.classList.add("active");
+    }
+
+    function showToast(message) {
+      const toast = $("toast");
+      toast.textContent = message;
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 1400);
+    }
+
+    function randInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function pick(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function generateRunId() {
+      if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+      return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    }
+
+    function formatA(a) {
+      if (a === 1) return "";
+      if (a === -1) return "-";
+      return String(a);
+    }
+
+    function formatBaseFormula(a) {
+      const aText = formatA(a);
+      return `y = ${aText}x²`;
+    }
+
+    function formatYShift(a, q) {
+      const aText = formatA(a);
+      const qText = q > 0 ? ` + ${q}` : ` - ${Math.abs(q)}`;
+      return `y = ${aText}x²${qText}`;
+    }
+
+    function formatXShift(a, p) {
+      const aText = formatA(a);
+      const inside = p > 0 ? `x - ${p}` : `x + ${Math.abs(p)}`;
+      return `y = ${aText}(${inside})²`;
+    }
+
+    function makeProblem() {
+      state.questionCount += 1;
+
+      const aChoices = [-5, -4, -3, -2, -1, 1, 2, 3, 4, 5];
+      const a = pick(aChoices);
+
+      let type;
+      if (state.current && Math.random() < 0.65) {
+        type = state.current.axis === "x" ? "y" : "x";
+      } else {
+        type = pick(["x", "y"]);
+      }
+
+      if (type === "y") {
+        const q = pick([-9,-8,-7,-6,-5,-4,-3,-2,-1,1,2,3,4,5,6,7,8,9]);
+        return {
+          formula: formatYShift(a, q),
+          baseFormula: formatBaseFormula(a),
+          axis: "y",
+          amount: q
+        };
+      }
+
+      const p = pick([-9,-8,-7,-6,-5,-4,-3,-2,-1,1,2,3,4,5,6,7,8,9]);
+      return {
+        formula: formatXShift(a, p),
+        baseFormula: formatBaseFormula(a),
+        axis: "x",
+        amount: p
+      };
+    }
+
+    function updateUI() {
+      const displayScore = Math.floor(state.score);
+      megaScoreText.textContent = displayScore;
+      timeText.textContent = state.timeLeft;
+      correctText.textContent = state.correct;
+      wrongText.textContent = state.wrong;
+      totalText.textContent = state.correct + state.wrong;
+      timerBox.classList.toggle("low", state.timeLeft <= 10);
+
+      megaScoreText.classList.remove("bump");
+      void megaScoreText.offsetWidth;
+      megaScoreText.classList.add("bump");
+    }
+
+    function updateSpeedText() {
+      if (!state.questionStart || state.waitingBox) return;
+      const elapsed = (Date.now() - state.questionStart) / 1000;
+      speedText.textContent = `${elapsed.toFixed(1)}s`;
+    }
+
+    function formatAmountText() {
+      return state.amountText || "?";
+    }
+
+    function updateAmountUI() {
+      const text = formatAmountText();
+      amountDisplay.textContent = text;
+      amountBlank.textContent = text;
+    }
+
+    function setInputEnabled(enabled) {
+      document.querySelectorAll(".choice, .key").forEach(btn => btn.disabled = !enabled);
+      submitBtn.disabled = !enabled;
+    }
+
+    function resetChoices() {
+      state.selectedAxis = null;
+      state.amountText = "";
+      document.querySelectorAll(".choice").forEach(btn => btn.classList.remove("selected"));
+      axisBlank.textContent = "?";
+      amountBlank.textContent = "?";
+      amountDisplay.textContent = "?";
+      feedback.textContent = "";
+      feedback.className = "feedback";
+      luckPanel.classList.remove("active");
+
+      document.querySelectorAll(".luck-box").forEach(box => {
+        box.disabled = false;
+        box.classList.remove("selected", "revealed", "not-selected");
+        box.querySelector(".box-result").textContent = "?";
+      });
+
+      setInputEnabled(true);
+    }
+
+    function nextProblem() {
+      if (state.gameEnded) return;
+      if (state.timeLeft <= 0) return endGame();
+
+      state.locked = false;
+      state.waitingBox = false;
+      resetChoices();
+
+      state.current = makeProblem();
+      state.questionStart = Date.now();
+      formulaText.textContent = state.current.formula;
+      baseFormulaText.textContent = state.current.baseFormula;
+      levelText.textContent = "MIX MODE";
+      questionText.textContent = `${state.questionCount}번 문제`;
+      speedText.textContent = "0.0s";
+    }
+
+    function startGame() {
+      const name = nicknameInput.value.trim();
+      state.nickname = name || "익명";
+      state.score = 0;
+      state.correct = 0;
+      state.wrong = 0;
+      state.questionCount = 0;
+      state.timeLeft = GAME_TIME;
+      state.locked = false;
+      state.waitingBox = false;
+      state.bestLuck = "-";
+      state.current = null;
+      state.boxChoices = [];
+      state.gameEnded = false;
+      state.rankSavePromise = null;
+      state.runId = generateRunId();
+
+      clearInterval(state.timerId);
+      clearInterval(state.speedTimerId);
+
+      luckLog.innerHTML = "문제를 푼 뒤 운명 상자 3개 중 하나를 골라 점수를 불려 보세요.";
+
+      showScreen(gameScreen);
+      updateUI();
+      nextProblem();
+
+      state.timerId = setInterval(() => {
+        state.timeLeft -= 1;
+        updateUI();
+
+        if (state.timeLeft <= 0) {
+          endGame();
+        }
+      }, 1000);
+
+      state.speedTimerId = setInterval(updateSpeedText, 100);
+    }
+
+    function setFeedback(message, type, sub = "") {
+      feedback.innerHTML = sub ? `${message}<small>${sub}</small>` : message;
+      feedback.className = `feedback ${type}`;
+    }
+
+    function showFloatingScore(point, prefix = "") {
+      if (typeof point === "number") {
+        floatingScore.textContent = point > 0 ? `+${point}` : String(point);
+      } else {
+        floatingScore.textContent = prefix + point;
+      }
+      floatingScore.classList.remove("show");
+      void floatingScore.offsetWidth;
+      floatingScore.classList.add("show");
+    }
+
+    function inputKey(key) {
+      if (!gameScreen.classList.contains("active") || state.locked || state.waitingBox) return;
+
+      if (key === "+" || key === "-") {
+        const digits = state.amountText.replace(/[+-]/g, "");
+        state.amountText = key + digits;
+        updateAmountUI();
+        return;
+      }
+
+      if (key === "back") {
+        state.amountText = state.amountText.slice(0, -1);
+        updateAmountUI();
+        return;
+      }
+
+      if (/^[1-9]$/.test(key)) {
+        const signMatch = state.amountText.match(/^[+-]/);
+        const sign = signMatch ? signMatch[0] : "";
+        const digits = state.amountText.replace(/[+-]/g, "");
+
+        if (digits.length >= 2) {
+          showToast("이동거리는 두 자리까지만 입력할 수 있어요.");
+          return;
+        }
+
+        state.amountText = sign + digits + key;
+        updateAmountUI();
+      }
+    }
+
+    function parseAmount() {
+      if (/^[+]?[1-9][0-9]?$/.test(state.amountText)) {
+        return Number(state.amountText.replace("+", ""));
+      }
+
+      if (/^-[1-9][0-9]?$/.test(state.amountText)) {
+        return Number(state.amountText);
+      }
+
+      return null;
+    }
+
+    function getSpeedPoint(seconds) {
+      if (seconds <= 2) return 200;
+      if (seconds >= 10) return 50;
+      const t = (seconds - 2) / 8;
+      return Math.round(200 - 150 * t);
+    }
+
+    function submitAnswer() {
+      if (state.gameEnded || state.locked || state.waitingBox || !state.current || state.timeLeft <= 0) return;
+
+      const amount = parseAmount();
+      if (!state.selectedAxis || amount === null) {
+        showToast("축 방향과 이동거리를 입력하세요. 양수는 +를 생략해도 됩니다.");
+        return;
+      }
+
+      state.locked = true;
+      setInputEnabled(false);
+
+      const c = state.current;
+      const elapsed = (Date.now() - state.questionStart) / 1000;
+      const isCorrect = state.selectedAxis === c.axis && amount === c.amount;
+
+      if (isCorrect) {
+        state.correct += 1;
+        state.waitingBox = true;
+        luckPanel.classList.add("active");
+
+        const basePoint = getSpeedPoint(elapsed);
+        state.score += basePoint;
+
+        setFeedback(
+          `정답! +${basePoint}점`,
+          "good",
+          `${elapsed.toFixed(1)}초 · 상자를 선택하세요`
+        );
+        showFloatingScore(basePoint);
+        updateUI();
+        prepareBoxes();
+      } else {
+        state.wrong += 1;
+        state.waitingBox = false;
+        luckPanel.classList.remove("active");
+
+        const before = Math.floor(state.score);
+        state.score = 0;
+
+        const axisText = c.axis === "x" ? "x축방향" : "y축방향";
+        const amountText = c.amount > 0 ? `${c.amount}` : `${c.amount}`;
+        setFeedback(
+          `오답! 점수가 0점이 되었습니다`,
+          "bad",
+          `정답: ${axisText}, ${amountText}만큼`
+        );
+        luckLog.innerHTML = `💥 오답으로 상자 선택 기회가 사라졌습니다.<br>현재 점수 ${before}점 → <b>0점</b>`;
+        showFloatingScore("0점", "");
+        updateUI();
+
+        setTimeout(() => {
+          nextProblem();
+        }, 1200);
+      }
+    }
+
+    function rollBoxEffect() {
+      const r = Math.random() * 100;
+
+      if (r < 20) return { type: "multiply", value: 2, label: "×2" };
+
+      if (r < 28) {
+        const multiplier = 3 + Math.floor(r - 20);
+        return { type: "multiply", value: multiplier, label: `×${multiplier}` };
+      }
+
+      if (r < 38) return { type: "divide", value: 2, label: "÷2" };
+      if (r < 48) return { type: "divide", value: 3, label: "÷3" };
+
+      const bonus = randInt(1, 50) * 10;
+      return { type: "add", value: bonus, label: `+${bonus}` };
+    }
+
+    function prepareBoxes() {
+      state.boxChoices = [rollBoxEffect(), rollBoxEffect(), rollBoxEffect()];
+
+      document.querySelectorAll(".luck-box").forEach((box, i) => {
+        box.disabled = false;
+        box.classList.remove("selected", "revealed", "not-selected");
+        box.querySelector(".box-result").textContent = state.boxChoices[i].label;
+      });
+    }
+
+    function applyBox(index) {
+      if (state.gameEnded || !state.waitingBox || state.timeLeft <= 0) return;
+      if (!state.boxChoices[index]) return;
+
+      document.querySelectorAll(".luck-box").forEach((box, i) => {
+        box.disabled = true;
+        box.classList.add("revealed");
+        if (i === index) box.classList.add("selected");
+        else box.classList.add("not-selected");
+      });
+
+      const before = Math.floor(state.score);
+      const effect = state.boxChoices[index];
+      let after = before;
+
+      if (effect.type === "add") {
+        after = before + effect.value;
+        state.score = after;
+        luckLog.innerHTML = `🎁 선택한 상자: <b>${effect.label}점</b><br>현재 점수 ${before}점 → <b>${after}점</b>`;
+        setFeedback(`상자 결과 ${effect.label}점!`, "luck");
+        showFloatingScore(effect.value);
+      }
+
+      if (effect.type === "multiply") {
+        after = before * effect.value;
+        state.score = after;
+        state.bestLuck = effect.label;
+        luckLog.innerHTML = `🚀 대박 상자! <b>현재 점수 ${effect.label}</b><br>${before}점 → <b>${after}점</b>`;
+        setFeedback(`대박! 현재 점수 ${effect.label}!`, "luck");
+        showFloatingScore(effect.label, "");
+      }
+
+      if (effect.type === "divide") {
+        after = Math.floor(before / effect.value);
+        state.score = after;
+        luckLog.innerHTML = `💥 위험 상자! <b>현재 점수 ${effect.label}</b><br>${before}점 → <b>${after}점</b>`;
+        setFeedback(`위험! 현재 점수 ${effect.label}!`, "bad");
+        showFloatingScore(effect.label, "");
+      }
+
+      updateUI();
+
+      setTimeout(() => {
+        luckPanel.classList.remove("active");
+        nextProblem();
+      }, 900);
+    }
+
+    function getLocalRanks() {
+      try {
+        return JSON.parse(localStorage.getItem(RANK_KEY)) || [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveLocalRank(record) {
+      const ranks = getLocalRanks();
+      ranks.push(record);
+      ranks.sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        if (b.correct !== a.correct) return b.correct - a.correct;
+        return b.accuracy - a.accuracy;
+      });
+      localStorage.setItem(RANK_KEY, JSON.stringify(ranks.slice(0, 10)));
+    }
+
+    function makeRecord() {
+      const total = state.correct + state.wrong;
+      const accuracy = total ? Math.round((state.correct / total) * 100) : 0;
+
+      return {
+        name: state.nickname,
+        score: Math.floor(state.score),
+        correct: state.correct,
+        wrong: state.wrong,
+        bestLuck: state.bestLuck,
+        total,
+        accuracy,
+        date: new Date().toLocaleDateString("ko-KR")
+      };
+    }
+
+    async function saveRank() {
+      if (state.rankSavePromise) return state.rankSavePromise;
+
+      const record = makeRecord();
+      const runId = state.runId || generateRunId();
+      state.runId = runId;
+
+      state.rankSavePromise = (async () => {
+        saveLocalRank(record);
+
+        try {
+          await setDoc(doc(db, RANK_COLLECTION, runId), {
+            ...record,
+            runId,
+            createdAt: serverTimestamp()
+          });
+          return { record, online: true };
+        } catch (error) {
+          console.warn("온라인 랭킹 저장 실패:", error);
+          showToast("온라인 랭킹 저장 실패: 로컬에 임시 저장되었습니다.");
+          return { record, online: false };
+        }
+      })();
+
+      return state.rankSavePromise;
+    }
+
+    async function getOnlineRanks() {
+      const rankQuery = query(
+        collection(db, RANK_COLLECTION),
+        orderBy("score", "desc"),
+        limit(10)
+      );
+
+      const snapshot = await getDocs(rankQuery);
+      return snapshot.docs.map((doc) => doc.data());
+    }
+
+    function renderRankRows(ranks, myRecord = null, isOnline = true) {
+      if (!ranks.length) {
+        rankList.innerHTML = `<div class="no-rank">아직 저장된 기록이 없습니다.</div>`;
+        return;
+      }
+
+      rankList.innerHTML = ranks.map((r, i) => {
+        const isMe = myRecord &&
+          r.name === myRecord.name &&
+          r.score === myRecord.score &&
+          r.correct === myRecord.correct &&
+          r.total === myRecord.total;
+
+        return `
+          <div class="rank-row ${isMe ? "me" : ""}">
+            <div>${i + 1}위</div>
+            <div>${escapeHTML(r.name)} <span style="color:#94a3b8; font-size:12px;">${r.correct}정답 · ${r.accuracy || 0}% · 최고운 ${r.bestLuck || "-"}${isOnline ? "" : " · 로컬"}</span></div>
+            <div class="rank-score">${r.score}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    async function renderRanks(myRecord = null) {
+      rankList.innerHTML = `<div class="no-rank">온라인 랭킹을 불러오는 중입니다...</div>`;
+
+      try {
+        const ranks = await getOnlineRanks();
+        renderRankRows(ranks, myRecord, true);
+      } catch (error) {
+        console.warn("온라인 랭킹 불러오기 실패:", error);
+        const localRanks = getLocalRanks();
+        rankList.innerHTML = `<div class="no-rank">온라인 랭킹을 불러오지 못했습니다. Firestore 설정 또는 보안 규칙을 확인하세요.<br>아래는 이 브라우저의 로컬 기록입니다.</div>`;
+        if (localRanks.length) {
+          rankList.innerHTML += localRanks.map((r, i) => `
+            <div class="rank-row">
+              <div>${i + 1}위</div>
+              <div>${escapeHTML(r.name)} <span style="color:#94a3b8; font-size:12px;">${r.correct}정답 · ${r.accuracy || 0}% · 최고운 ${r.bestLuck || "-"} · 로컬</span></div>
+              <div class="rank-score">${r.score}</div>
+            </div>
+          `).join("");
+        }
+      }
+    }
+
+    function escapeHTML(str) {
+      return String(str).replace(/[&<>"']/g, (m) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      }[m]));
+    }
+
+    async function endGame() {
+      if (state.gameEnded) return;
+      state.gameEnded = true;
+
+      clearInterval(state.timerId);
+      clearInterval(state.speedTimerId);
+
+      state.timeLeft = 0;
+      state.waitingBox = false;
+      state.locked = true;
+      luckPanel.classList.remove("active");
+      updateUI();
+
+      const total = state.correct + state.wrong;
+      const accuracy = total ? Math.round((state.correct / total) * 100) : 0;
+      const saveResult = await saveRank();
+      const myRecord = saveResult.record;
+
+      finalScoreText.textContent = Math.floor(state.score);
+      finalNameText.textContent = state.nickname;
+      finalCorrectText.textContent = state.correct;
+      finalWrongText.textContent = state.wrong;
+      finalBestLuckText.textContent = state.bestLuck;
+      finalTotalText.textContent = total;
+      finalAccuracyText.textContent = `${accuracy}%`;
+
+      showScreen(resultScreen);
+      await renderRanks(myRecord);
+    }
+
+    document.querySelectorAll(".choice").forEach(btn => {
+      btn.addEventListener("click", () => {
+        if (state.waitingBox || state.locked) return;
+
+        const group = btn.dataset.group;
+        const value = btn.dataset.value;
+
+        document.querySelectorAll(`.choice[data-group="${group}"]`).forEach(b => {
+          b.classList.remove("selected");
+        });
+        btn.classList.add("selected");
+
+        if (group === "axis") {
+          state.selectedAxis = value;
+          axisBlank.textContent = value === "x" ? "x축방향" : "y축방향";
+        }
+      });
+    });
+
+    document.querySelectorAll(".key").forEach(btn => {
+      btn.addEventListener("click", () => inputKey(btn.dataset.key));
+    });
+
+    document.querySelectorAll(".luck-box").forEach(box => {
+      box.addEventListener("click", () => applyBox(Number(box.dataset.boxIndex)));
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (!gameScreen.classList.contains("active")) return;
+
+      if (state.waitingBox) {
+        if (["1", "2", "3"].includes(e.key)) applyBox(Number(e.key) - 1);
+        return;
+      }
+
+      if (e.key === "q" || e.key === "Q") document.querySelector('.choice[data-group="axis"][data-value="x"]').click();
+      if (e.key === "w" || e.key === "W") document.querySelector('.choice[data-group="axis"][data-value="y"]').click();
+
+      if (e.key === "+" || e.key === "-") inputKey(e.key);
+      if (/^[1-9]$/.test(e.key)) inputKey(e.key);
+      if (e.key === "Backspace") inputKey("back");
+      if (e.key === "Enter") submitAnswer();
+    });
+
+    submitBtn.addEventListener("click", submitAnswer);
+    startBtn.addEventListener("click", startGame);
+
+    nicknameInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") startGame();
+    });
+
+    rankBtn.addEventListener("click", async () => {
+      finalScoreText.textContent = "-";
+      finalNameText.textContent = "-";
+      finalCorrectText.textContent = "-";
+      finalWrongText.textContent = "-";
+      finalBestLuckText.textContent = "-";
+      finalTotalText.textContent = "-";
+      finalAccuracyText.textContent = "-";
+      showScreen(resultScreen);
+      await renderRanks();
+    });
+
+    restartBtn.addEventListener("click", startGame);
+
+    homeBtn.addEventListener("click", () => {
+      showScreen(startScreen);
+    });
+
+    refreshRankBtn.addEventListener("click", async () => {
+      refreshRankBtn.disabled = true;
+      refreshRankBtn.textContent = "불러오는 중...";
+      await renderRanks();
+      refreshRankBtn.textContent = "랭킹 새로고침";
+      refreshRankBtn.disabled = false;
+    });
+
+    renderRanks();
+  </script>
+</body>
+</html>
