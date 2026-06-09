@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>꼭짓점 카드 조합 게임</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"Noto Sans KR","Pretendard",sans-serif;background:#08111f;color:#f8fafc}
+body{
+  background:radial-gradient(circle at top left,rgba(56,189,248,.22),transparent 34%),
+  radial-gradient(circle at top right,rgba(250,204,21,.14),transparent 30%),
+  linear-gradient(135deg,#07111f,#111827 55%,#0b1020);
+}
+.start{
+  position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:18px;
+  background:radial-gradient(circle at top,rgba(56,189,248,.22),transparent 38%),linear-gradient(135deg,#060914,#111827 62%,#060914)
+}
+.startBox{
+  width:min(560px,100%);border-radius:30px;padding:28px;background:rgba(23,32,51,.96);
+  border:1px solid rgba(255,255,255,.13);box-shadow:0 26px 90px rgba(0,0,0,.48);text-align:center
+}
+.startBox h1{margin:0 0 8px;font-size:clamp(32px,8vw,52px);letter-spacing:-2px}
+.startBox p{margin:0 0 16px;color:#cbd5e1;font-weight:800;line-height:1.55}
+.wrap{max-width:1200px;margin:0 auto;padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom))}
+h1{margin:0 0 6px;font-size:clamp(25px,6vw,42px);letter-spacing:-1.2px}
+.desc{margin:0 0 14px;color:#b6c4dc;font-weight:700;line-height:1.45}
+.panel{background:rgba(23,32,51,.92);border:1px solid rgba(255,255,255,.1);border-radius:22px;padding:15px;box-shadow:0 15px 45px rgba(0,0,0,.28)}
+.top{display:grid;grid-template-columns:1fr auto auto auto;gap:8px;align-items:center;margin-bottom:12px}
+input{width:100%;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.08);color:#fff;border-radius:14px;padding:13px 14px;font-size:16px;font-weight:800;outline:none}
+button{border:0;border-radius:14px;padding:12px 14px;min-height:48px;color:#fff;font-weight:900;background:linear-gradient(180deg,#2b3b5f,#1d2a47);border:1px solid rgba(255,255,255,.1);cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+button:active{transform:scale(.97)}button:disabled{opacity:.45}
+.btnBlue{background:linear-gradient(180deg,#38bdf8,#2563eb)}.btnGreen{background:linear-gradient(180deg,#34d399,#059669)}.btnYellow{background:linear-gradient(180deg,#facc15,#d97706)}.btnRed{background:linear-gradient(180deg,#fb7185,#be123c)}
+.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:12px}
+.stat{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:12px}
+.stat .label{font-size:12px;color:#9fb0cf;font-weight:800}.stat .value{font-size:24px;font-weight:1000;margin-top:4px}
+.xpBar{height:8px;background:rgba(255,255,255,.1);border-radius:999px;overflow:hidden;margin-top:7px}.xpFill{height:100%;background:linear-gradient(90deg,#34d399,#facc15);width:0%}
+.mainGrid{display:grid;grid-template-columns:.9fr 1.1fr;gap:12px}
+.problem{background:linear-gradient(135deg,#15223b,#111827);border:1px solid rgba(56,189,248,.25);border-radius:20px;padding:16px}
+.problemTitle{color:#9fb0cf;font-weight:900}.equation{text-align:center;font-size:clamp(32px,8vw,54px);font-weight:1000;letter-spacing:-2px;margin:20px 0}
+.hint{color:#cbd5e1;font-size:14px;line-height:1.5;font-weight:700}
+.coords{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.coord{border-radius:18px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);padding:16px 10px;text-align:center;min-height:96px}
+.coord.active{border-color:#38bdf8;box-shadow:0 0 0 3px rgba(56,189,248,.17) inset;background:rgba(56,189,248,.13)}
+.coord .small{color:#9fb0cf;font-size:13px;font-weight:900}.coord .big{font-size:36px;font-weight:1000;margin-top:6px}
+.calc{margin-top:12px;background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:10px}.calcScreen{min-height:54px;border-radius:14px;background:#071021;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.calcScreen b{font-size:28px}.keys{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.keys button{font-size:20px;padding:8px;min-height:52px}
+.feedback{margin-top:10px;border-radius:14px;padding:11px 12px;min-height:48px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);color:#dbeafe;font-weight:800;line-height:1.45}
+.feedback.good{background:rgba(52,211,153,.13);border-color:rgba(52,211,153,.35)}.feedback.bad{background:rgba(251,113,133,.13);border-color:rgba(251,113,133,.35)}.feedback.warn{background:rgba(250,204,21,.13);border-color:rgba(250,204,21,.35)}
+.sectionTitle{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 10px}.sectionTitle h2{margin:0;font-size:22px}.tag{font-size:12px;color:#9fb0cf;background:rgba(255,255,255,.08);border-radius:999px;padding:6px 9px;font-weight:900}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;max-height:620px;overflow:auto}
+.card{position:relative;border-radius:18px;padding:12px;min-height:160px;border:1px solid rgba(255,255,255,.1);background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.035));overflow:hidden}
+.card.high{background:linear-gradient(135deg,rgba(250,204,21,.23),rgba(56,189,248,.13),rgba(244,114,182,.16));border-color:rgba(250,204,21,.45)}
+.uid{position:absolute;top:8px;right:8px;font-size:11px;background:rgba(0,0,0,.35);border-radius:999px;padding:4px 7px;font-weight:900}.stars{font-weight:1000;color:#facc15;letter-spacing:-1px}.name{font-size:16px;font-weight:1000;color:#fff;margin:8px 0 5px;line-height:1.25}.meta{font-size:13px;color:#dbeafe;font-weight:800;line-height:1.4}
+.badge{display:inline-block;margin-top:8px;background:#facc15;color:#111827;border-radius:999px;padding:5px 8px;font-size:12px;font-weight:1000}.card .record{width:100%;margin-top:8px;font-size:12px;padding:8px;min-height:38px}
+.empty{grid-column:1/-1;text-align:center;color:#9fb0cf;border:1px dashed rgba(255,255,255,.18);border-radius:18px;padding:22px;font-weight:800;line-height:1.5}
+.bottom{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}.log{display:flex;flex-direction:column;gap:7px;max-height:260px;overflow:auto}.logItem{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:13px;padding:9px 10px;font-size:13px;color:#dbeafe;font-weight:750;line-height:1.4}
+.modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:12px;background:rgba(0,0,0,.68);z-index:20}.modal.show{display:flex}.modalBox{width:min(1050px,100%);max-height:92vh;overflow:auto;background:linear-gradient(135deg,#1f2a44,#0f172a);border:1px solid rgba(255,255,255,.16);border-radius:24px;padding:16px}.modalHead{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;margin-bottom:10px}.modalTitle{font-size:26px;font-weight:1000}.modalDesc{color:#cbd5e1;font-weight:800;line-height:1.45;margin-top:4px}
+.pickInfo{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px}.infoBox{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:15px;padding:10px;min-height:74px}.infoBox .label{font-size:12px;color:#9fb0cf;font-weight:900}.infoBox .value{font-size:17px;font-weight:1000;margin-top:5px}.pickGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;max-height:420px;overflow:auto}.pickCard{text-align:left;border-radius:17px;min-height:142px;padding:11px;background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.035));border:1px solid rgba(255,255,255,.1)}.pickCard.selected{border-color:#facc15;box-shadow:0 0 0 3px rgba(250,204,21,.22) inset}.pickCard:disabled{opacity:.32}
+.roulette{text-align:center;display:none;margin:12px 0}.roulette.show{display:block}.resultBox{height:88px;border-radius:18px;background:#071021;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.12)}.resultText{font-size:36px;font-weight:1000}.resultText.success{color:#86efac}.resultText.fail{color:#fb7185}
+.hallGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}.hallChar{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:12px}.hallChar h3{margin:0 0 8px;font-size:17px}.hallRow{display:flex;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.08);padding:7px 0;font-weight:850;color:#dbeafe}.hallRow:last-child{border-bottom:0}
+@media(max-width:760px){
+  .wrap{padding:10px}.top{grid-template-columns:1fr 1fr;gap:8px}.top input{grid-column:1/-1}.stats{grid-template-columns:repeat(2,1fr)}.mainGrid,.bottom{grid-template-columns:1fr}.pickInfo{grid-template-columns:1fr}.cards{grid-template-columns:repeat(2,1fr);max-height:none}.card{min-height:150px}.modalBox{padding:12px;border-radius:20px}.pickGrid{grid-template-columns:repeat(2,1fr)}button{min-height:50px}
+}
+</style>
+</head>
+<body>
+<div class="start" id="startOverlay">
+  <div class="startBox">
+    <h1>꼭짓점 카드 조합</h1>
+    <p>닉네임을 입력하고 시작하세요.<br>조합레벨을 올리면 조합 성공률이 올라갑니다.</p>
+    <input id="startNickname" placeholder="닉네임 입력">
+    <button class="btnGreen" id="startBtn" style="width:100%;font-size:21px;padding:16px">게임 시작</button>
+    <button id="skipBtn" style="width:100%;margin-top:8px">닉네임 없이 시작</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <h1>꼭짓점 카드 조합 게임</h1>
+  <p class="desc" id="playerText">플레이어: -</p>
+  <div class="top">
+    <input id="nickname" placeholder="닉네임 입력">
+    <button class="btnGreen" id="combineBtn">조합창</button>
+    <button class="btnYellow" id="hallBtn">명예의 전당</button>
+    <button class="btnRed" id="resetBtn">처음부터</button>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="label">정답 수</div><div class="value" id="correctCount">0개</div></div>
+    <div class="stat"><div class="label">보유 카드</div><div class="value" id="cardCount">0장</div></div>
+    <div class="stat"><div class="label">최고 카드</div><div class="value" id="bestStar">없음</div></div>
+    <div class="stat"><div class="label">조합레벨</div><div class="value" id="fusionLevel">Lv.1</div><div class="xpBar"><div class="xpFill" id="xpFill"></div></div></div>
+    <div class="stat"><div class="label">강화+20%</div><div class="value" id="boostCount">0개</div></div>
+    <div class="stat"><div class="label">Firebase</div><div class="value" id="fbStatus">준비중</div></div>
+  </div>
+
+  <div class="mainGrid">
+    <section class="panel" id="problemPanel">
+      <div class="problem">
+        <div class="problemTitle">문제: 다음 그래프의 꼭짓점은?</div>
+        <div class="equation" id="equation">y=(x-2)²+3</div>
+        <div class="hint">y=a(x-p)²+q 꼴에서 꼭짓점은 <b>(p,q)</b>입니다. 양수는 숫자만, 음수는 - 버튼을 누르세요.</div>
+      </div>
+      <div class="coords">
+        <div class="coord active" data-field="vx" id="coordX"><div class="small">꼭짓점 x좌표</div><div class="big" id="field_vx">?</div></div>
+        <div class="coord" data-field="vy" id="coordY"><div class="small">꼭짓점 y좌표</div><div class="big" id="field_vy">?</div></div>
+      </div>
+      <div class="calc">
+        <div class="calcScreen">
+          <div><div class="calcLabel" id="calcLabel">x좌표 입력 중</div><b id="calcValue">0</b></div>
+          <button id="switchBtn">좌표 전환</button>
+        </div>
+        <div class="keys">
+          <button data-num="7">7</button><button data-num="8">8</button><button data-num="9">9</button><button id="minusBtn">-</button>
+          <button data-num="4">4</button><button data-num="5">5</button><button data-num="6">6</button><button id="backBtn">⌫</button>
+          <button data-num="1">1</button><button data-num="2">2</button><button data-num="3">3</button><button id="clearBtn">C</button>
+          <button id="xBtn">x</button><button data-num="0">0</button><button id="yBtn">y</button><button class="btnBlue" id="answerBtn">등록</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-top:10px">
+        <button class="btnBlue" id="answerBtn2">정답 등록하고 카드 획득</button>
+        <button id="showAnswerBtn">정답보기</button>
+      </div>
+      <div class="feedback" id="feedback">닉네임을 입력하고 게임 시작을 누르세요.</div>
+    </section>
+
+    <section class="panel">
+      <div class="sectionTitle"><h2>카드 보관함</h2><span class="tag">히든 없음</span></div>
+      <div class="cards" id="cards"></div>
+    </section>
+  </div>
+
+  <div class="bottom">
+    <section class="panel"><div class="sectionTitle"><h2>게임 기록</h2><span class="tag">최근 기록</span></div><div class="log" id="log"></div></section>
+    <section class="panel">
+      <div class="sectionTitle"><h2>조합레벨 규칙</h2><span class="tag">Lv.10 이상 가능</span></div>
+      <div class="logItem">
+        같은 캐릭터 + 같은 n성 카드만 조합할 수 있습니다.<br><br>
+        <b>1·2성 자동조합</b>은 조합레벨 <b>Lv.5부터</b> 사용할 수 있습니다.<br>
+        n성+n성 조합 시 <b>n×10 경험치</b>를 얻고, 레벨업 필요 경험치는 50, 100, 150처럼 50씩 증가합니다.<br>
+        조합레벨이 1 오를 때마다 조합 성공률에 <b>+3%</b>가 붙습니다.<br><br>
+        Lv.8부터 정답 시 <b>강화확률 +20% 아이템</b>을 얻을 수 있습니다. 기본 확률은 3%이고, Lv.11부터 레벨이 오를수록 0.5%씩 증가합니다.<br>
+        Lv.10부터 정답 시 <b>4·5성 보너스카드팩</b>을 얻을 수 있습니다. 기본 확률은 2%이고, Lv.11부터 레벨이 오를수록 0.5%씩 증가합니다.<br>
+        조합레벨은 10 이상으로도 계속 올라갈 수 있습니다.
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="modal" id="combineModal">
+  <div class="modalBox">
+    <div class="modalHead"><div><div class="modalTitle">조합창</div><div class="modalDesc" id="combineDesc">같은 캐릭터, 같은 n성 카드 2장을 선택하세요.</div></div><button class="btnRed" id="closeCombine">닫기</button></div>
+    <div class="pickInfo"><div class="infoBox"><div class="label">선택 카드 1</div><div class="value" id="sel1">선택 안 됨</div></div><div class="infoBox"><div class="label">선택 카드 2</div><div class="value" id="sel2">선택 안 됨</div></div><div class="infoBox"><div class="label">조합확률</div><div class="value" id="chance">-</div></div></div>
+    <div class="feedback warn" style="margin:0 0 10px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+      <span id="boostInfo">강화확률 +20% 아이템: 0개</span>
+      <button class="btnYellow" id="toggleBoost">+20% 아이템 사용: OFF</button>
+    </div>
+    <div style="display:grid;grid-template-columns:2fr 1.2fr 1fr;gap:8px;margin-bottom:10px">
+      <button class="btnGreen" id="doCombine" disabled>선택한 두 카드 조합</button>
+      <button class="btnBlue" id="autoLowBtn">1·2성 자동조합</button>
+      <button id="resetSelect">선택 초기화</button>
+    </div>
+    <div class="roulette" id="roulette"><div class="resultBox"><div class="resultText" id="resultText">READY</div></div></div>
+    <div class="pickGrid" id="pickGrid"></div>
+  </div>
+</div>
+
+<div class="modal" id="hallModal">
+  <div class="modalBox">
+    <div class="modalHead">
+      <div>
+        <div class="modalTitle">명예의 전당</div>
+        <div class="modalDesc" id="hallDesc">3개 캐릭터의 1성부터 20성까지 최초 기록자가 표시됩니다.</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+        <button class="btnYellow" id="refreshHall">새로고침</button>
+        <button class="btnRed" id="closeHall">닫기</button>
+      </div>
+    </div>
+    <div class="hallGrid" id="hallGrid"></div>
+  </div>
+</div>
+
+<div class="modal" id="packModal">
+  <div class="modalBox" style="width:min(560px,100%);text-align:center">
+    <div class="modalTitle">보너스 카드팩!</div>
+    <div class="modalDesc">4성 또는 5성 카드가 랜덤으로 등장합니다.</div>
+    <div class="resultBox" style="height:160px;margin:16px 0">
+      <div>
+        <div class="resultText" id="packRoulette">4성</div>
+        <div id="packCardName" style="font-size:22px;font-weight:1000;margin-top:10px;color:#fff"></div>
+      </div>
+    </div>
+    <button class="btnGreen" id="closePack" style="width:100%">확인</button>
+  </div>
+</div>
+
+<div class="modal" id="autoResultModal">
+  <div class="modalBox" style="width:min(620px,100%)">
+    <div class="modalHead">
+      <div>
+        <div class="modalTitle">1·2성 자동조합 결과</div>
+        <div class="modalDesc" id="autoResultSummary">자동조합 결과입니다.</div>
+      </div>
+      <button class="btnRed" id="closeAutoResult">닫기</button>
+    </div>
+    <div class="log" id="autoResultList" style="max-height:360px"></div>
+    <button class="btnGreen" id="confirmAutoResult" style="width:100%;margin-top:12px">확인</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const firebaseConfig={
+    apiKey:"AIzaSyBJH4uX1bj0PaEUtMDuYSyJ2GDt6f7Gz6o",
+    authDomain:"game-bb5b0.firebaseapp.com",
+    projectId:"game-bb5b0",
+    storageBucket:"game-bb5b0.firebasestorage.app",
+    messagingSenderId:"47848761419",
+    appId:"1:47848761419:web:62f872cc443d49411a85ce",
+    measurementId:"G-SJBS9DDEPL"
+  };
+  const chars=[
+    {id:"parabolaMage",name:"포물선마법사 이준승",emoji:"🧙"},
+    {id:"coordinateNinja",name:"좌표닌자 조현열",emoji:"🥷"},
+    {id:"vertexKnight",name:"꼭짓점기사 김민성",emoji:"🛡️"}
+  ];
+  const charById=Object.fromEntries(chars.map(c=>[c.id,c]));
+  const $=id=>document.getElementById(id);
+  let db=null, firebaseReady=false;
+  let state={
+    started:false,field:"vx",input:{vx:"",vy:""},problem:null,
+    cards:[],nextId:1,correct:0,selected:[],useBoost:false,hall:JSON.parse(localStorage.getItem("vertexCardHallFusionLevel")||"{}"),
+    combining:false,fusionLevel:1,fusionXp:0,boostItems:0
+  };
+
+  function loadFirebase(){
+    Promise.all([
+      import("https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js"),
+      import("https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js"),
+      import("https://www.gstatic.com/firebasejs/10.12.5/firebase-analytics.js")
+    ]).then(([appMod, fsMod, analyticsMod])=>{
+      const app=appMod.initializeApp(firebaseConfig);
+      try{
+        analyticsMod.getAnalytics(app);
+      }catch(e){
+        console.warn("Analytics는 file:// 또는 일부 환경에서 비활성화될 수 있습니다.", e);
+      }
+      db=fsMod.getFirestore(app);
+      window.__fs=fsMod;
+      firebaseReady=true;
+      $("fbStatus").textContent="연결";
+      loadHallFromFirebase();
+    }).catch(err=>{
+      console.warn(err);
+      firebaseReady=false;
+      $("fbStatus").textContent="로컬";
+    });
+  }
+
+  function hallKey(charId,star){return charId+"_star_"+star}
+  function nickname(){return ($("nickname").value.trim()||"무명").slice(0,12)}
+  function rand(a,b){return Math.floor(Math.random()*(b-a+1))+a}
+  function choice(arr){return arr[Math.floor(Math.random()*arr.length)]}
+  function starText(n){return "★".repeat(Math.min(n,10))+(n>10?`+${n-10}`:"")}
+  function baseRate(star){if(star<=8)return 100-star*10;if(star===9)return 19;return Math.max(1,28-star)}
+  function bonusRate(){return (state.fusionLevel-1)*3}
+  function totalRate(star){return Math.min(99,baseRate(star)+bonusRate())}
+  function xpNeed(level){return level*50}
+  function safeNum(v){if(v===""||v==="-")return null;const n=Number(v);return Number.isNaN(n)?null:n}
+  function eq(a,p,q){const at=a===1?"":a===-1?"-":String(a);const inside=p>0?`x-${p}`:p<0?`x+${Math.abs(p)}`:"x";const qt=q>0?`+${q}`:q<0?String(q):"";return `y=${at}(${inside})²${qt}`}
+  function startGame(skip=false){
+    const name=skip?"무명":($("startNickname").value.trim()||"무명").slice(0,12);
+    $("nickname").value=name;
+    $("playerText").textContent="플레이어: "+name;
+    $("startOverlay").style.display="none";
+    state.started=true;
+    feedback("게임 시작! 문제를 풀어 카드를 얻으세요.","good");
+    log(`${name} 게임 시작`);
+    newProblem();
+    render();
+  }
+  function resetGame(){
+    if(!confirm("처음부터 다시 시작할까요?"))return;
+    const hall=state.hall;
+    state={started:false,field:"vx",input:{vx:"",vy:""},problem:null,cards:[],nextId:1,correct:0,selected:[],hall,combining:false,fusionLevel:1,fusionXp:0,boostItems:0};
+    $("startOverlay").style.display="flex";
+    $("log").innerHTML="";
+    $("playerText").textContent="플레이어: -";
+    newProblem();render();
+  }
+  function newProblem(){let a=0;while(a===0)a=rand(-5,5);const p=rand(-9,9),q=rand(-9,9);state.problem={a,p,q};state.input={vx:"",vy:""};state.field="vx";$("equation").textContent=eq(a,p,q);renderInput()}
+  function renderInput(){$("field_vx").textContent=state.input.vx===""||state.input.vx==="-"?"?":state.input.vx;$("field_vy").textContent=state.input.vy===""||state.input.vy==="-"?"?":state.input.vy;$("coordX").classList.toggle("active",state.field==="vx");$("coordY").classList.toggle("active",state.field==="vy");$("calcLabel").textContent=state.field==="vx"?"x좌표 입력 중":"y좌표 입력 중";$("calcValue").textContent=state.input[state.field]||"0"}
+  function setField(f){state.field=f;renderInput()}
+  function ensureStarted(){if(!state.started){feedback("먼저 첫 화면에서 게임 시작을 눌러 주세요.","warn");return false}return true}
+  function pressDigit(d){if(!ensureStarted())return;let v=state.input[state.field];if(v==="0")v="";if(v==="-0")v="-";if(v.length>=3)return;state.input[state.field]=v+String(d);renderInput()}
+  function minus(){if(!ensureStarted())return;let v=state.input[state.field];state.input[state.field]=v.startsWith("-")?v.slice(1):"-"+v;if(state.input[state.field]==="")state.input[state.field]="-";renderInput()}
+  function back(){if(!ensureStarted())return;state.input[state.field]=state.input[state.field].slice(0,-1);renderInput()}
+  function clear(){if(!ensureStarted())return;state.input[state.field]="";renderInput()}
+  function drawCard(){
+    const chance3 = Math.min(0.40, 0.10 + (state.fusionLevel-1) * 0.03);
+    const chance2 = 0.25;
+    const r=Math.random();
+    let star=1;
+    if(r < chance3){
+      star=3;
+    }else if(r < chance3 + chance2){
+      star=2;
+    }else{
+      star=1;
+    }
+    const ch=choice(chars);
+    return{uid:state.nextId++,charId:ch.id,char:ch,star};
+  }
+
+  function itemDropRate(){
+    if(state.fusionLevel<8)return 0;
+    if(state.fusionLevel<=10)return 0.03;
+    return 0.03 + (state.fusionLevel-10)*0.005;
+  }
+
+  function packDropRate(){
+    if(state.fusionLevel<10)return 0;
+    if(state.fusionLevel===10)return 0.02;
+    return 0.02 + (state.fusionLevel-10)*0.005;
+  }
+
+  async function maybeGiveSpecialRewards(){
+    const itemRate=itemDropRate();
+    if(itemRate>0 && Math.random()<itemRate){
+      state.boostItems++;
+      log(`🎯 강화확률 +20% 아이템 획득! (${(itemRate*100).toFixed(1)}%)`);
+      feedback(`정답 보상! <b>강화확률 +20% 아이템</b>을 획득했습니다. 현재 ${state.boostItems}개 보유.`,"good");
+    }
+
+    const packRate=packDropRate();
+    if(packRate>0 && Math.random()<packRate){
+      await openBonusPack();
+    }
+  }
+
+  async function openBonusPack(){
+    const ch=choice(chars);
+    const star=Math.random()<0.5?4:5;
+    const card={uid:state.nextId++,charId:ch.id,char:ch,star};
+    const modal=$("packModal");
+    const roulette=$("packRoulette");
+    const name=$("packCardName");
+    $("closePack").disabled=true;
+    name.textContent="";
+    modal.classList.add("show");
+
+    for(let i=0;i<14;i++){
+      roulette.textContent=(i%2===0)?"4성":"5성";
+      roulette.className="resultText "+(i%2===0?"success":"fail");
+      await wait(110);
+    }
+
+    roulette.textContent=`${star}성`;
+    roulette.className="resultText success";
+    name.textContent=`${ch.emoji} ${ch.name}`;
+    state.cards.push(card);
+    log(`🎁 보너스카드팩 획득: ${star}성 ${ch.name} #${card.uid}`);
+    feedback(`보너스카드팩에서 <b>${star}성 ${ch.name}</b> 획득!`,"good");
+    render();
+    $("closePack").disabled=false;
+  }
+  async function answer(){
+    if(!ensureStarted())return;
+    const vx=safeNum(state.input.vx),vy=safeNum(state.input.vy);
+    if(vx===null||vy===null)return feedback("x좌표와 y좌표를 모두 입력하세요.","warn");
+    const{p,q}=state.problem;
+    if(vx===p&&vy===q){
+      state.correct++;
+      const c=drawCard();
+      state.cards.push(c);
+      feedback(`정답! 꼭짓점은 <b>(${p}, ${q})</b>. <b>${c.star}성 ${c.char.name}</b> 획득!`,"good");
+      log(`정답 ${state.correct}회: ${c.star}성 ${c.char.name} #${c.uid} 획득`);
+      render();
+      await maybeGiveSpecialRewards();
+      setTimeout(newProblem,300);
+    }else{
+      feedback(`오답입니다. 이 그래프의 꼭짓점은 <b>(${p}, ${q})</b>입니다.`,"bad");
+      render();
+    }
+  }
+  function showAnswer(){if(!ensureStarted())return;state.input.vx=String(state.problem.p);state.input.vy=String(state.problem.q);renderInput();feedback("정답을 입력했습니다. 등록 버튼을 누르면 카드가 지급됩니다.","warn")}
+  function cardClass(c){return c.star>=5?"high":""}
+  function hasSamePair(c){return state.cards.some(x=>x.uid!==c.uid&&x.charId===c.charId&&x.star===c.star)}
+  function getResult(a,b){
+    if(!a||!b||a.uid===b.uid||a.star!==b.star)return null;
+    if(a.charId===b.charId){
+      const itemBonus = state.useBoost ? 20 : 0;
+      return {
+        rate:Math.min(99,totalRate(a.star)+itemBonus),
+        base:baseRate(a.star),
+        bonus:bonusRate(),
+        itemBonus,
+        charId:a.charId,
+        star:a.star+1,
+        desc:`${a.star}성 → ${a.star+1}성`
+      };
+    }
+    return null;
+  }
+  function canCombineAny(c){return state.cards.some(x=>x.uid!==c.uid&&getResult(c,x))}
+  function getCard(uid){return state.cards.find(c=>c.uid===uid)}
+  function addFusionXp(star){
+    state.fusionXp += star*10;
+    let leveled=0;
+    while(state.fusionXp>=xpNeed(state.fusionLevel)){
+      state.fusionXp-=xpNeed(state.fusionLevel);
+      state.fusionLevel++;
+      leveled++;
+    }
+    if(leveled>0)log(`✨ 조합레벨 상승! Lv.${state.fusionLevel} · 추가 성공률 +${bonusRate()}%`);
+  }
+  function renderCards(){if(!state.cards.length){$("cards").innerHTML='<div class="empty">아직 카드가 없습니다.<br>문제를 맞히면 카드가 나옵니다.</div>';return}const sorted=[...state.cards].sort((a,b)=>b.star-a.star||a.char.name.localeCompare(b.char.name,"ko")||a.uid-b.uid);$("cards").innerHTML=sorted.map(c=>{const key=hallKey(c.charId,c.star);const recorded=!!state.hall[key];return`<div class="card ${cardClass(c)}"><div class="uid">#${c.uid}</div><div class="stars">${starText(c.star)}</div><div class="name">${c.char.emoji} ${c.char.name}</div><div class="meta">${c.star}성 카드</div>${hasSamePair(c)?'<div class="badge">조합가능</div>':""}<button class="record ${recorded?"":"btnYellow"}" data-record="${c.uid}" ${recorded?"disabled":""}>${recorded?"기록 있음":"기록저장"}</button></div>`}).join("");document.querySelectorAll("[data-record]").forEach(btn=>btn.addEventListener("click",()=>saveRecord(Number(btn.dataset.record))))}
+  async function saveRecord(uid){const c=getCard(uid);if(!c)return;const key=hallKey(c.charId,c.star);if(state.hall[key])return feedback(`${c.char.name} ${c.star}성은 이미 기록이 있습니다.`,"warn");const rec={nickname:nickname(),charId:c.charId,charName:c.char.name,star:c.star,date:new Date().toLocaleString("ko-KR")};if(firebaseReady&&db){try{const fs=window.__fs;const ref=fs.doc(db,"quadraticCardHallOfFame",key);const snap=await fs.getDoc(ref);if(snap.exists()){state.hall[key]=snap.data();feedback(`${c.char.name} ${c.star}성은 이미 Firebase에 기록이 있습니다.`,"warn");render();return}await fs.setDoc(ref,{...rec,createdAt:fs.serverTimestamp()});state.hall[key]=rec;feedback(`🏆 Firebase에 ${c.char.name} ${c.star}성 최초 기록 저장!`,"good");log(`🏆 Firebase 명예의 전당: ${c.char.name} ${c.star}성 · ${rec.nickname}`);render();return}catch(e){console.warn(e)}}state.hall[key]=rec;localStorage.setItem("vertexCardHallFusionLevel",JSON.stringify(state.hall));feedback(`Firebase 저장 실패 또는 오프라인. 로컬에 ${c.char.name} ${c.star}성 기록 저장!`,"warn");log(`🏆 로컬 기록: ${c.char.name} ${c.star}성 · ${rec.nickname}`);render()}
+  function openCombine(){if(!ensureStarted())return;state.selected=[];$("combineModal").classList.add("show");$("roulette").classList.remove("show");renderCombine()}
+  function closeCombine(){if(state.combining)return;$("combineModal").classList.remove("show")}
+  function renderCombine(){const one=getCard(state.selected[0]),two=getCard(state.selected[1]),res=one&&two?getResult(one,two):null;$("sel1").textContent=one?`${one.star}성 ${one.char.name} #${one.uid}`:"선택 안 됨";$("sel2").textContent=two?`${two.star}성 ${two.char.name} #${two.uid}`:"선택 안 됨";$("chance").textContent=res?`${res.rate}% (기본 ${res.base}% + 레벨 ${res.bonus}% + 아이템 ${res.itemBonus}%)`:one?"선택 중":"-";$("doCombine").disabled=!res;$("combineDesc").textContent=res?res.desc:"같은 캐릭터, 같은 n성 카드 2장을 선택하세요.";
+    if($("boostInfo"))$("boostInfo").textContent=`강화확률 +20% 아이템: ${state.boostItems}개`;
+    if($("toggleBoost")){
+      $("toggleBoost").textContent=state.useBoost?"+20% 아이템 사용: ON":"+20% 아이템 사용: OFF";
+      $("toggleBoost").disabled=state.boostItems<=0 && !state.useBoost;
+    }
+    if($("autoLowBtn")){
+      $("autoLowBtn").textContent=state.fusionLevel<5?"1·2성 자동조합 (Lv.5 필요)":"1·2성 자동조합";
+    }
+    if(!state.cards.length){$("pickGrid").innerHTML='<div class="empty">카드가 없습니다.</div>';return}const sorted=[...state.cards].sort((a,b)=>b.star-a.star||a.uid-b.uid);$("pickGrid").innerHTML=sorted.map(c=>{let disabled=false,combinable=canCombineAny(c);if(one&&!state.selected.includes(c.uid)){const r=getResult(one,c);disabled=!r;combinable=!!r}const selected=state.selected.includes(c.uid);return`<button class="pickCard ${cardClass(c)} ${selected?"selected":""}" data-pick="${c.uid}" ${disabled?"disabled":""}><div class="uid">#${c.uid}</div><div class="stars">${starText(c.star)}</div><div class="name">${c.char.emoji} ${c.char.name}</div><div class="meta">${c.star}성 카드</div>${combinable?'<div class="badge">조합가능</div>':""}</button>`}).join("");document.querySelectorAll("[data-pick]").forEach(btn=>btn.addEventListener("click",()=>pickCard(Number(btn.dataset.pick))))}
+  function pickCard(uid){const c=getCard(uid);if(!c||state.combining)return;if(state.selected.includes(uid)){state.selected=state.selected.filter(x=>x!==uid);renderCombine();return}if(state.selected.length===0)state.selected=[uid];else if(state.selected.length===1){const first=getCard(state.selected[0]);if(!getResult(first,c))return feedback("조합 가능한 카드가 아닙니다.","warn");state.selected.push(uid)}else state.selected=[uid];renderCombine()}
+  const wait=ms=>new Promise(r=>setTimeout(r,ms));
+
+  function findAutoLowPair(){
+    for(const star of [1,2]){
+      for(const ch of chars){
+        const pair = state.cards.filter(c=>c.charId===ch.id && c.star===star).slice(0,2);
+        if(pair.length>=2) return pair;
+      }
+    }
+    return null;
+  }
+
+  async function autoCombineLowStars(){
+    if(!ensureStarted())return;
+    if(state.fusionLevel<5){
+      feedback("1·2성 자동조합은 조합레벨 Lv.5부터 사용할 수 있습니다.","warn");
+      $("autoResultSummary").innerHTML="1·2성 자동조합은 조합레벨 Lv.5부터 사용할 수 있습니다.";
+      $("autoResultList").innerHTML='<div class="logItem">조합레벨을 올린 뒤 다시 시도하세요.</div>';
+      $("autoResultModal").classList.add("show");
+      return;
+    }
+    if(state.combining){
+      feedback("이미 조합 중입니다. 잠시 후 다시 눌러 주세요.","warn");
+      return;
+    }
+
+    const prevBoost=state.useBoost;
+    state.useBoost=false;
+    let count=0;
+    let successCount=0;
+    let failCount=0;
+    const results=[];
+    let pair=findAutoLowPair();
+
+    if(!pair){
+      feedback("자동조합할 1성 또는 2성 같은 카드 2장이 없습니다.","warn");
+      $("autoResultSummary").innerHTML="자동조합할 1성 또는 2성 같은 카드 2장이 없습니다.";
+      $("autoResultList").innerHTML='<div class="logItem">조합 가능한 카드가 없습니다.</div>';
+      $("autoResultModal").classList.add("show");
+      return;
+    }
+
+    state.combining=true;
+    if($("autoLowBtn")) $("autoLowBtn").disabled=true;
+
+    while(pair){
+      const a=pair[0], b=pair[1];
+      const res=getResult(a,b);
+      if(!res)break;
+
+      const success=Math.random()*100<res.rate;
+      addFusionXp(a.star);
+
+      if(success){
+        state.cards=state.cards.filter(c=>c.uid!==a.uid&&c.uid!==b.uid);
+        const ch=charById[res.charId];
+        const nc={uid:state.nextId++,charId:ch.id,char:ch,star:res.star};
+        state.cards.push(nc);
+        successCount++;
+        const msg=`성공(${res.rate}%): ${a.star}성 ${ch.name} #${a.uid} + #${b.uid} → ${nc.star}성 #${nc.uid} · EXP +${a.star*10}`;
+        results.push({type:"success", text:msg});
+        log(`자동조합 ${msg}`);
+      }else{
+        const lost=choice([a,b]);
+        state.cards=state.cards.filter(c=>c.uid!==lost.uid);
+        failCount++;
+        const msg=`실패(${res.rate}%): ${lost.star}성 ${lost.char.name} #${lost.uid} 소멸 · EXP +${a.star*10}`;
+        results.push({type:"fail", text:msg});
+        log(`자동조합 ${msg}`);
+      }
+
+      count++;
+      render();
+      await wait(120);
+      pair=findAutoLowPair();
+    }
+
+    state.useBoost=prevBoost;
+    state.combining=false;
+    if($("autoLowBtn")) $("autoLowBtn").disabled=false;
+
+    feedback(`1·2성 자동조합 완료! 총 <b>${count}회</b> 조합했습니다.`,"good");
+    $("autoResultSummary").innerHTML=`총 <b>${count}회</b> 조합 · <b style="color:#86efac">성공 ${successCount}회</b> · <b style="color:#fb7185">실패 ${failCount}회</b>`;
+    $("autoResultList").innerHTML=results.map(r=>`<div class="logItem" style="border-color:${r.type==="success"?"rgba(52,211,153,.35)":"rgba(251,113,133,.35)"}">${r.type==="success"?"✅":"❌"} ${r.text}</div>`).join("");
+    $("autoResultModal").classList.add("show");
+
+    if($("combineModal").classList.contains("show"))renderCombine();
+  }
+
+  async function doCombine(){const a=getCard(state.selected[0]),b=getCard(state.selected[1]),res=getResult(a,b);if(!res)return;state.combining=true;$("doCombine").disabled=true;$("roulette").classList.add("show");const text=$("resultText");const seq=["성공!","실패...","성공!","실패...","성공!","실패..."];for(const s of seq){text.textContent=s;text.className="resultText "+(s.includes("실패")?"fail":"success");await wait(170)}const success=Math.random()*100<res.rate;text.textContent=success?"조합 성공!":"조합 실패...";text.className="resultText "+(success?"success":"fail");await wait(650);
+    const usedBoost=state.useBoost && state.boostItems>0;
+    if(usedBoost){
+      state.boostItems--;
+      state.useBoost=false;
+      log("🎯 강화확률 +20% 아이템 사용");
+    }
+    addFusionXp(a.star);if(success){state.cards=state.cards.filter(c=>c.uid!==a.uid&&c.uid!==b.uid);const ch=charById[res.charId];const nc={uid:state.nextId++,charId:ch.id,char:ch,star:res.star};state.cards.push(nc);feedback(`조합 성공! <b>${nc.star}성 ${nc.char.name}</b> 획득! 경험치 +${a.star*10}`,"good");log(`조합 성공(${res.rate}%): #${a.uid} + #${b.uid} → ${nc.star}성 ${nc.char.name} #${nc.uid} · EXP +${a.star*10}`)}else{const lost=choice([a,b]);state.cards=state.cards.filter(c=>c.uid!==lost.uid);feedback(`조합 실패... ${lost.star}성 ${lost.char.name} #${lost.uid} 소멸. 경험치 +${a.star*10}`,"bad");log(`조합 실패(${res.rate}%): ${lost.star}성 ${lost.char.name} #${lost.uid} 소멸 · EXP +${a.star*10}`)}state.selected=[];state.combining=false;render();renderCombine()}
+  function openHall(){
+    $("hallModal").classList.add("show");
+    refreshHall();
+  }
+  async function refreshHall(){
+    if($("hallDesc")){
+      $("hallDesc").textContent = firebaseReady
+        ? "Firebase에서 명예의 전당을 불러오는 중입니다..."
+        : "Firebase 연결 전입니다. 현재 브라우저에 저장된 기록을 표시합니다.";
+    }
+    if(firebaseReady){
+      await loadHallFromFirebase();
+      if($("hallDesc")) $("hallDesc").textContent = "Firebase 명예의 전당을 새로고침했습니다. 1성부터 20성까지 표시됩니다.";
+    }
+    renderHall();
+  }
+  function closeHall(){$("hallModal").classList.remove("show")}
+  async function loadHallFromFirebase(){if(!firebaseReady||!db)return;const fs=window.__fs;const starsToLoad=20;const tasks=[];for(const ch of chars){for(let s=1;s<=starsToLoad;s++){const key=hallKey(ch.id,s);tasks.push(fs.getDoc(fs.doc(db,"quadraticCardHallOfFame",key)).then(snap=>{if(snap.exists())state.hall[key]=snap.data()}))}}await Promise.all(tasks);localStorage.setItem("vertexCardHallFusionLevel",JSON.stringify(state.hall));render()}
+  function renderHall(){$("hallGrid").innerHTML=chars.map(ch=>{let rows="";for(let s=20;s>=1;s--){const r=state.hall[hallKey(ch.id,s)];rows+=`<div class="hallRow"><span>${s}성</span><b>${r?r.nickname:"-"}</b></div>`}return`<div class="hallChar"><h3>${ch.emoji} ${ch.name}</h3>${rows}</div>`}).join("")}
+  function render(){$("correctCount").textContent=state.correct+"개";$("cardCount").textContent=state.cards.length+"장";$("bestStar").textContent=state.cards.length?Math.max(...state.cards.map(c=>c.star))+"성":"없음";$("fusionLevel").textContent=`Lv.${state.fusionLevel}`;const need=xpNeed(state.fusionLevel);$("xpFill").style.width=Math.min(100,state.fusionXp/need*100)+"%";$("boostCount").textContent=state.boostItems+"개";renderCards()}
+  function feedback(msg,type=""){$("feedback").className="feedback "+type;$("feedback").innerHTML=msg}
+  function log(msg){const div=document.createElement("div");div.className="logItem";div.innerHTML=msg;$("log").prepend(div)}
+
+  $("startBtn").addEventListener("click",()=>startGame(false));$("skipBtn").addEventListener("click",()=>startGame(true));$("startNickname").addEventListener("keydown",e=>{if(e.key==="Enter")startGame(false)});
+  $("coordX").addEventListener("click",()=>setField("vx"));$("coordY").addEventListener("click",()=>setField("vy"));$("switchBtn").addEventListener("click",()=>setField(state.field==="vx"?"vy":"vx"));$("xBtn").addEventListener("click",()=>setField("vx"));$("yBtn").addEventListener("click",()=>setField("vy"));
+  document.querySelectorAll("[data-num]").forEach(b=>b.addEventListener("click",()=>pressDigit(b.dataset.num)));
+  $("minusBtn").addEventListener("click",minus);$("backBtn").addEventListener("click",back);$("clearBtn").addEventListener("click",clear);$("answerBtn").addEventListener("click",answer);$("answerBtn2").addEventListener("click",answer);$("showAnswerBtn").addEventListener("click",showAnswer);
+  $("combineBtn").addEventListener("click",openCombine);$("hallBtn").addEventListener("click",openHall);$("closeCombine").addEventListener("click",closeCombine);$("closeHall").addEventListener("click",closeHall);$("refreshHall").addEventListener("click",refreshHall);$("resetSelect").addEventListener("click",()=>{state.selected=[];renderCombine()});$("doCombine").addEventListener("click",doCombine);$("autoLowBtn").addEventListener("click",autoCombineLowStars);$("toggleBoost").addEventListener("click",()=>{if(state.boostItems<=0&&!state.useBoost)return;state.useBoost=!state.useBoost;renderCombine();});$("closePack").addEventListener("click",()=>{$("packModal").classList.remove("show");});$("closeAutoResult").addEventListener("click",()=>{$("autoResultModal").classList.remove("show");});$("confirmAutoResult").addEventListener("click",()=>{$("autoResultModal").classList.remove("show");});$("resetBtn").addEventListener("click",resetGame);
+  document.addEventListener("keydown",e=>{if(e.key==="Enter"&&state.started)answer();if(e.key==="ArrowLeft")setField("vx");if(e.key==="ArrowRight")setField("vy");if(e.key>="0"&&e.key<="9"&&state.started)pressDigit(e.key);if(e.key==="-"&&state.started)minus();if(e.key==="Backspace"&&state.started)back();if(e.key==="Escape"){closeCombine();closeHall()}});
+  newProblem();render();loadFirebase();
+})();
+</script>
+</body>
+</html>
